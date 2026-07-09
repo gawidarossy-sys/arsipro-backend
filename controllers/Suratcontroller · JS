@@ -1,0 +1,97 @@
+const fs = require("fs");
+const path = require("path");
+const Surat = require("../models/Surat");
+
+// Upload surat
+exports.uploadSurat = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "File tidak ditemukan" });
+    }
+
+    const suratBaru = await Surat.create({
+      namaAsli: req.file.originalname,
+      namaFile: req.file.filename,
+      path: req.file.path,
+      ukuran: req.file.size,
+      tipe: req.file.mimetype
+    });
+
+    res.status(201).json({
+      message: "Surat berhasil diupload",
+      data: suratBaru
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Ambil semua surat
+exports.getAllSurat = async (req, res) => {
+  try {
+    const suratList = await Surat.find().sort({ createdAt: -1 });
+    res.json(suratList);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Ambil satu surat by ID
+exports.getSuratById = async (req, res) => {
+  try {
+    const surat = await Surat.findById(req.params.id);
+    if (!surat) {
+      return res.status(404).json({ message: "Surat tidak ditemukan" });
+    }
+    res.json(surat);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Download surat (nama file balik ke nama asli)
+exports.downloadSurat = async (req, res) => {
+  try {
+    const surat = await Surat.findById(req.params.id);
+
+    if (!surat) {
+      return res.status(404).json({ message: "Surat tidak ditemukan" });
+    }
+
+    const filePath = path.resolve(surat.path);
+
+    if (!fs.existsSync(filePath)) {
+      return res
+        .status(404)
+        .json({ message: "File fisik tidak ditemukan di server" });
+    }
+
+    // res.download otomatis set header Content-Disposition
+    // dengan nama asli, bukan nama timestamp
+    res.download(filePath, surat.namaAsli);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Hapus surat
+exports.deleteSurat = async (req, res) => {
+  try {
+    const surat = await Surat.findById(req.params.id);
+
+    if (!surat) {
+      return res.status(404).json({ message: "Surat tidak ditemukan" });
+    }
+
+    const filePath = path.resolve(surat.path);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    await surat.deleteOne();
+
+    res.json({ message: "Surat berhasil dihapus" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

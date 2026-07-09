@@ -1,0 +1,22 @@
+const express = require("express");
+const router = express.Router();
+const upload = require("../config/upload");
+const suratController = require("../controllers/suratController");
+
+// Upload surat baru
+// field name di form-data harus "surat"
+router.post("/upload", upload.single("surat"), suratController.uploadSurat);
+
+// Ambil semua surat
+router.get("/", suratController.getAllSurat);
+
+// Ambil detail satu surat
+router.get("/:id", suratController.getSuratById);
+
+// Download surat (nama file otomatis balik ke nama asli)
+router.get("/download/:id", suratController.downloadSurat);
+
+// Hapus surat
+router.delete("/:id", suratController.deleteSurat);
+
+module.exports = router;

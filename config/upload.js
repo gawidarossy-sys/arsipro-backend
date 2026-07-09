@@ -5,7 +5,6 @@ const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, "uploads/");
   },
-
   filename: function (req, file, cb) {
     const uniqueName = Date.now() + path.extname(file.originalname);
     cb(null, uniqueName);
@@ -15,7 +14,7 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 15 * 1024 * 1024
+    fileSize: 15 * 1024 * 1024 // 15MB
   },
   fileFilter: function (req, file, cb) {
     const filetypes = /pdf|doc|docx/;

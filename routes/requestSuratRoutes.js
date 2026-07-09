@@ -1,27 +1,46 @@
 const express = require("express");
 const router = express.Router();
 
-const suratKeluarController = require("../controllers/suratKeluarController");
+const requestSuratController = require("../controllers/requestSuratController");
+const chatController = require("../controllers/chatRequestController");
 const upload = require("../config/upload");
 const { isAdmin } = require("../middleware/roleMiddleware");
+const { verifyToken } = require("../middleware/authMiddleware");
 
 // TEST
 router.get("/test", (req, res) => {
-    res.send("surat keluar jalan");
+    res.send("request surat jalan");
 });
 
-// ➕ TAMBAH SURAT KELUAR
-router.post(
-  "/",
-  upload.single("file_surat"),
-  isAdmin,
-  suratKeluarController.createSuratKeluar
-);
+// upload SEBELUM verifyToken agar req.body bisa dibaca
+router.post("/request-surat", upload.single("file_contoh"), verifyToken, requestSuratController.createRequestSurat);
 
-// 📄 GET SEMUA
-router.get("/", suratKeluarController.getAllSuratKeluar);
+// LIHAT REQUEST SENDIRI
+router.get("/request-surat/:id", verifyToken, requestSuratController.getMyRequest);
 
-// ❌ DELETE
-router.delete("/:id", isAdmin, suratKeluarController.deleteSuratKeluar);
+// ADMIN LIHAT SEMUA REQUEST
+router.get("/request-surat", verifyToken, isAdmin, requestSuratController.getAllRequest);
+
+// ADMIN UPDATE STATUS
+router.put("/request-surat/:id", verifyToken, isAdmin, requestSuratController.updateStatus);
+
+// ADMIN UPLOAD BALASAN
+router.post("/request-surat/:id/balasan", upload.single("file_balasan"), verifyToken, isAdmin, requestSuratController.uploadBalasan);
+
+// ADMIN UPLOAD FILE PERBAIKAN
+router.post("/upload-perbaikan", upload.single("file"), verifyToken, isAdmin, requestSuratController.uploadPerbaikan);
+
+// ADMIN KIRIM BALIK KE DOSEN
+router.post("/request-surat/:id/kirim-balik", verifyToken, isAdmin, requestSuratController.kirimBalik);
+
+// CHAT - GET pesan
+router.get("/chat-request/:id", verifyToken, chatController.getChat);
+
+// CHAT - POST kirim pesan
+router.post("/chat-request/:id", verifyToken, chatController.sendChat);
+
+// DOWNLOAD FILE — TANPA verifyToken karena dipanggil dari <a href> / window.open
+// yang tidak bisa kirim header Authorization
+router.get("/download/:id/:type", requestSuratController.downloadFile);
 
 module.exports = router;

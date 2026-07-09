@@ -4,28 +4,50 @@ const router = express.Router();
 const suratKeluarController = require("../controllers/suratKeluarController");
 const upload = require("../config/upload");
 const { isAdmin } = require("../middleware/roleMiddleware");
-
-// 🔍 TARUH DI SINI (SETELAH REQUIRE)
-console.log("createSuratKeluar:", typeof suratKeluarController.createSuratKeluar);
-console.log("isAdmin:", typeof isAdmin);
+const { verifyToken } = require("../middleware/authMiddleware");
 
 // TEST
 router.get("/test", (req, res) => {
   res.send("surat keluar jalan");
 });
 
+// TEST TOKEN
+router.get("/cek-token", verifyToken, (req, res) => {
+  res.json({
+    message: "TOKEN VALID TEMBUS 🔥",
+    user: req.user
+  });
+});
+
+// GET TRASH
+router.get("/trash", verifyToken, suratKeluarController.getTrashSuratKeluar);
+
+// DOWNLOAD
+router.get("/download/:id", verifyToken, suratKeluarController.downloadSuratKeluar);
+
+// GET ALL
+router.get("/", verifyToken, suratKeluarController.getAllSuratKeluar);
+
 // TAMBAH
 router.post(
   "/",
-  upload.single("file_surat"),
+  (req, res, next) => {
+    console.log("🔥 ROUTE SURAT KELUAR KE PANGGIL");
+    next();
+  },
+  verifyToken,
   isAdmin,
+  upload.single("file_surat"),
   suratKeluarController.createSuratKeluar
 );
 
-// GET
-router.get("/", suratKeluarController.getAllSuratKeluar);
+// RESTORE
+router.put("/restore/:id", verifyToken, isAdmin, suratKeluarController.restoreSuratKeluar);
 
-// DELETE
-router.delete("/:id", isAdmin, suratKeluarController.deleteSuratKeluar);
+// HAPUS PERMANEN
+router.delete("/trash/:id", verifyToken, isAdmin, suratKeluarController.forceDeleteSuratKeluar);
+
+// SOFT DELETE
+router.delete("/:id", verifyToken, isAdmin, suratKeluarController.deleteSuratKeluar);
 
 module.exports = router;
